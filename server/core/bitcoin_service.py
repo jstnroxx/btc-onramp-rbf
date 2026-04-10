@@ -10,11 +10,18 @@ def loadWallet(wifKey : str) -> PrivateKeyTestnet:
     try:
         return PrivateKeyTestnet(wifKey)
     except Exception:
-        raise ValueError("Invalid WIF key.") 
+        raise ValueError("Invalid WIF key") 
     
 def getWalletInfo(wifKey : str) -> dict:
     wallet = loadWallet(wifKey)
-    balanceSat = wallet.get_balance("satoshi")
+    
+    response = requests.get(f"{MEMPOOL_API_URL}/address/{wallet.address}", timeout = 10)
+    
+    if response.status_code == 404:
+        return None
+    response.raise_for_status()
+    
+    balanceSat = response.json().get("chain_stats", {}).get("funded_txo_sum", 0)
     
     return {
         "address" : wallet.address,

@@ -30,6 +30,7 @@ yarn-error.log
 # Miscellaneous
 __pycache__/
 *.pyc
+*.sqlite3
 /client/.angular/cache
 .sass-cache/
 /client/connect.lock
@@ -39,6 +40,7 @@ testem.log
 /client/typings
 __screenshots__/
 venv
+.env
 
 # System files
 .DS_Store
