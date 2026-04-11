@@ -8,7 +8,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = ["id", "txId", "recipient", "amountSat", "feeSatPerVB", "sizeBytes", "status", "confirmations", "createdAt", "replacedBy_id", "replaces_txId"]
         
-    def getReplacesTxId(self, obj):
+    def get_replaces_txId(self, obj):
         if hasattr(obj, "replaces") and obj.replaces:
             return obj.replaces.txId
         

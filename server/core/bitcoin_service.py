@@ -1,30 +1,28 @@
 import requests
 
-from bit import PrivateKeyTestnet
-from bit.exceptions import InsufficientFunds
+from bitcoinlib.keys import Key
+from bitcoinlib.transactions import Transaction
+from bitcoinlib.services.services import Service
 
 MEMPOOL_API_URL = "https://mempool.space/testnet4/api"
 
 # Wallets
-def loadWallet(wifKey : str) -> PrivateKeyTestnet:
+def loadWallet(wifKey : str) -> Key:
     try:
-        return PrivateKeyTestnet(wifKey)
-    except Exception:
+        return Key(wifKey, network = "testnet4")
+    except:
         raise ValueError("Invalid WIF key") 
     
 def getWalletInfo(wifKey : str) -> dict:
     wallet = loadWallet(wifKey)
     
-    response = requests.get(f"{MEMPOOL_API_URL}/address/{wallet.address}", timeout = 10)
+    walletAddress = wallet.address()
     
-    if response.status_code == 404:
-        return None
-    response.raise_for_status()
-    
-    balanceSat = response.json().get("chain_stats", {}).get("funded_txo_sum", 0)
+    btcService = Service(network = "testnet4")
+    balanceSat = btcService.getbalance(walletAddress)
     
     return {
-        "address" : wallet.address,
+        "address" : walletAddress,
         "balanceSat" : balanceSat
     }
     
@@ -42,7 +40,9 @@ def broadcastTransaction(rawHex : str) -> str:
         headers = {"Content-Type" : "text/plain"},
         timeout = 15
     )
-    response.raise_for_status()
+    
+    if not response.ok:
+        raise ValueError(response.text)
     
     return response.text.strip()
 
@@ -66,33 +66,57 @@ def getTxInfo(txid : str) -> dict | None:
 # Transactions
 def sendTransaction(wifKey : str, recipient : str, amountSat : int, feeSatPerVB : int) -> dict:
     wallet = loadWallet(wifKey)
-    outputs = [(recipient, amountSat, 'satoshi')]
     
-    try:
-        txHex = wallet.create_transaction(
-            outputs,
-            fee = feeSatPerVB,
-            absolute_fee = False,
-            replace_by_fee = True
-        )
-    except InsufficientFunds:
+    btcService = Service(network = "testnet4")
+    addressUtxos = btcService.getutxos(wallet.address())
+    
+    if not addressUtxos:
+        raise ValueError("No UTXOs found. Is the wallet funded?")
+    
+    tx = Transaction(network = "testnet4", witness_type = "legacy")
+    
+    totalInputSat = 0
+    
+    for utxo in addressUtxos:
+        tx.add_input(prev_txid = utxo["txid"], output_n = utxo["output_n"], keys = [wallet], sequence = 0xFFFFFFFD, witness_type = "legacy")    # "sequence = 0xFFFFFFFD" enables RBF
+        totalInputSat += utxo["value"]
+        
+        estimatedSize = tx.estimate_size()
+        requiredFee = estimatedSize * feeSatPerVB
+        
+        if totalInputSat >= (amountSat + requiredFee):
+            break
+    else:
         raise ValueError("Insufficient funds in this wallet for that amount and fee.")
     
-    txId = broadcastTransaction(txHex)
+    tx.add_output(amountSat, address = recipient)
+    
+    finalSize = tx.estimate_size()
+    finalFee = finalSize * feeSatPerVB
+    changeAmount = totalInputSat - amountSat - finalFee
+    
+    if changeAmount > 546:    # 546 satoshi is bitcoin dust limit, do not send such changes below
+        tx.add_output(changeAmount, address = wallet.address())
+        
+    tx.sign(keys=[wallet])    
+    
+    rawTxHex = tx.raw_hex()
+    
+    txId = broadcastTransaction(rawTxHex)
     
     info = getTxInfo(txId)
-    size = info["size"] if info else len(txHex) // 2
+    size = info["size"] if info else len(rawTxHex) // 2
     
     return {
-        "txid" : txId,
+        "txId" : txId,
         "sizeBytes" : size,
         "feeSatPerVB" : feeSatPerVB
     }
     
 def bumpFee(wifKey : str, originalTxId : str, newFeeSatPerVB : int) -> dict:
-    from core.models import Transaction
+    from core.models import Transaction as TransactionModel
     
-    originalTx = Transaction.objects.get(txId = originalTxId)
+    originalTx = TransactionModel.objects.get(txId = originalTxId)
     
     if newFeeSatPerVB <= originalTx.feeSatPerVB:
         raise ValueError(f"New fee must be greater than the original ({originalTx.feeSatPerVB} sat/vB).")
