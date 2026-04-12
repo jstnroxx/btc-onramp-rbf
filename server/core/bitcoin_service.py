@@ -79,11 +79,11 @@ def getTxInfo(txid : str) -> dict | None:
     }
     
 # Transactions
-def sendTransaction(wifKey : str, recipient : str, amountSat : int, feeSatPerVB : int) -> dict:
+def sendTransaction(wifKey : str, recipient : str, amountSat : int, feeSatPerVB : int, forcedUtxos: list | None = None) -> dict:
     key, address, witnessType = loadWallet(wifKey)
     
     btcService = Service(network = "testnet4")
-    addressUtxos = btcService.getutxos(address)
+    addressUtxos = forcedUtxos if forcedUtxos is not None else btcService.getutxos(address)
     
     if not addressUtxos:
         raise ValueError("No UTXOs found. Is the wallet funded?")
@@ -136,5 +136,23 @@ def bumpFee(wifKey : str, originalTxId : str, newFeeSatPerVB : int) -> dict:
     if newFeeSatPerVB <= originalTx.feeSatPerVB:
         raise ValueError(f"New fee must be greater than the original ({originalTx.feeSatPerVB} sat/vB).")
     
-    return sendTransaction(wifKey, originalTx.recipient, originalTx.amountSat, newFeeSatPerVB)
+    response = requests.get(f"{MEMPOOL_API_URL}/tx/{originalTxId}", timeout = 10)
+    if not response.ok:
+        raise ValueError("Original transaction not found in mempool.")
+    
+    originalTxData = response.json()
+    
+    forcedUtxos = []
+    for intake in originalTxData.get("vin", []):
+        parentResponse = requests.get(f"{MEMPOOL_API_URL}/tx/{intake["txid"]}", timeout = 10)
+        parentResponse.raise_for_status()
+        parentOutput = parentResponse.json()["vout"][intake["vout"]]
+        
+        forcedUtxos.append({
+            "txid" : intake["txid"],
+            "output_n" : intake["vout"],
+            "value" : parentOutput["value"] 
+        })
+        
+    return sendTransaction(wifKey, originalTx.recipient, originalTx.amountSat, newFeeSatPerVB, forcedUtxos = forcedUtxos)
 
