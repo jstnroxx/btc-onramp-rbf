@@ -1,6 +1,8 @@
 <div class="card">
     <h2>Transactions</h2>
 
+    <hr>
+
     @if (transactions().length === 0) {
         <p class="hint">
             No transactions yet.
@@ -13,42 +15,41 @@
             <span class="badge" [style.background-color]="getStatusColor(tx.status)" [class]="'badge-' + tx.status">{{ tx.status }}</span>
 
             <div class="tx-row">
-                <span class="label">TXID: </span>
+                <span class="label">TXID:&ensp;</span>
 
-                <a [style.text-decoration]="tx.replacedBy_id && 'line-through'" [href]="mempoolUrl(tx.txId)" target="_blank" class="txid">
-                    {{ tx.txId }}
+                <a [style.text-decoration]="tx.replacedBy_id && 'line-through'" [style.color]="tx.replacedBy_id ? 'black' : 'rgb(0, 85, 222)'" [style.pointer-events]="tx.replacedBy_id ? 'none' : 'auto'" [href]="tx.replacedBy_id ? null : mempoolTxUrl(tx.txId)" target="_blank" class="txid">{{ tx.txId }}
                 </a>
 
                 @if (tx.replaces_txId) {
                     <div class="rbf-chain">
-                        <span class="chain-label">&emsp;&#8627; replaced </span>
+                        <span class="chain-label">&emsp;&#8627; replaced&ensp;</span>
                         <span class="txid">{{ tx.replaces_txId | slice:0:20 }}…</span>
                     </div>
                 }
             </div>
 
             <div class="tx-row">
-                <span class="label">Recipient: </span>
-                <span class="txid">{{ tx.recipient }}</span>
+                <span class="label">Recipient:&ensp;</span>
+                <a class="txid" [href]="mempoolWalletUrl(tx.recipient)" target="_blank">{{ tx.recipient }}</a>
             </div>
 
             <div class="tx-row">
-                <span class="label">Amount: </span>
+                <span class="label">Amount:&ensp;</span>
                 <span>{{ tx.amountSat | number }} sat</span>
             </div>
 
             <div class="tx-row">
-                <span class="label">Fee: </span>
+                <span class="label">Fee:&ensp;</span>
                 <span>{{ tx.feeSatPerVB }} sat/vB ({{ tx.sizeBytes }} bytes)</span>
             </div>
 
             <div class="tx-row">
-                <span class="label">Confirmations: </span>
+                <span class="label">Confirmations:&ensp;</span>
                 <span>{{ tx.confirmations }}</span>
             </div>
 
             <div class="tx-row">
-                <span class="label">Sent: </span>
+                <span class="label">Sent:&ensp;</span>
                 <span>{{ tx.createdAt | date:'medium' }}</span>
             </div>
 
@@ -59,7 +60,7 @@
                     </button>
                 } @else {
                     <div class="rbf-form">
-                        <label>New fee (sat/vB) — must be &gt; {{ tx.feeSatPerVB }}</label>
+                        <label class="rbf-fee">New fee (sat/vB) — must be &gt; {{ tx.feeSatPerVB }}&ensp;</label>
                         <input type="number" [(ngModel)]="newFee" [min]="tx.feeSatPerVB + 1" />
 
                         @if (rbfError()) {
@@ -70,6 +71,7 @@
                             <button (click)="submitRbf(tx)" [disabled]="rbfLoading() || !newFee()">
                                 {{ rbfLoading() ? 'Broadcasting…' : 'Confirm bump' }}
                             </button>
+
                             <button class="secondary" (click)="cancelRbf()">
                                 Cancel
                             </button>

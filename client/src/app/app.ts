@@ -6,8 +6,9 @@ import { TxListComponent } from './components/tx-list/tx-list';
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
+  styleUrls: ['./app.css'],
   imports: [WalletConnectComponent, SendFormComponent, TxListComponent],
 })
 export class App {
-  txList = viewChild.required(TxListComponent);
+    txList = viewChild.required(TxListComponent)
 }

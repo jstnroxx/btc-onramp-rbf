@@ -2,19 +2,92 @@ span {
     line-height: 1.25;
 }
 
-.tx-item {
-    margin: 5px;
-    padding: 5px;
+h2 {
+    margin: 0px;
+}
+
+hr {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+a {
+    color: rgb(0, 85, 222);
+}
+
+button {
+    border-radius: 5px;
+    cursor: pointer;
     border: 1px solid black;
+    background-color: rgb(255, 255, 255);
+    padding: 5px;
+    margin-right: 5px;
+    transition: background-color 0.25s;
+}
+
+button:hover {
+    background-color: rgb(225, 225, 225);
+}
+
+button:active {
+    background-color: rgb(200, 200, 200);
+}
+
+input {
+    border-radius: 5px;
+    border: 1px solid black;
+    background-color: rgb(255, 255, 255);
+    padding: 5px;
+    outline: none;
+}
+
+.card {
+    padding: 20px;
+}
+
+.tx-item {
+    padding: 20px;
+    background-color: rgb(250, 249, 245);
+    border: 1px solid black;
+    border-radius: 10px;
+    transition: scale 0.15s;
+    margin-top: 20px;
+}
+
+.tx-item:hover {
+    scale: 1.005;
+}
+
+.txid {
+    overflow-wrap: break-word;
 }
 
 .badge {
     font-weight: bold;
-    padding: 2px;
+    font-style: italic;
+    padding: 5px;
     border: 1px solid black;
     border-radius: 5px;
+    margin-bottom: 5px;
+    display: inline-block;
 }
 
 .label {
     font-weight: bold;
+}
+
+.rbf-btn {
+    margin-top: 15px;
+}
+
+.rbf-fee {
+    display: inline-block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.error {
+    color: rgb(255, 77, 77);
+    margin: 0;
+    margin-bottom: 5px;
 }

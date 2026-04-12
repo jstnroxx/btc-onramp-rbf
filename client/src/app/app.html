@@ -1,11 +1,19 @@
 <div class="app-container">
     <header>
-    <h1>BTC On-ramp</h1>
-    <span class="subtitle">Testnet4</span>
+        <h1>BTC ON-RAMP + RBF</h1>
+        <span class="subtitle">testnet4</span>
+
+        <hr>
     </header>
+
     <main>
-    <app-wallet-connect />
-    <app-send-form (sent)="txList().refresh()" />
-    <app-tx-list />
+        <div class="forms">
+            <app-wallet-connect />
+            <app-send-form (sent)="txList().refreshList()"/>
+        </div>
+
+        <div class="txlist">
+            <app-tx-list />
+        </div>
     </main>
 </div>

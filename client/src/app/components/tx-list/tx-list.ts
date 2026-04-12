@@ -24,22 +24,26 @@ export class TxListComponent implements OnInit, OnDestroy {
     private pollSub?: Subscription;
 
     ngOnInit(): void {
-    this.pollSub = interval(30_000)
-        .pipe(
-        startWith(0),
-        switchMap(() => this.txService.getTransactions())
-        )
-        .subscribe({ next: (txs) => this.transactions.set(txs) });
+        this.txService.getTransactions().subscribe({
+            next: (txs) => this.transactions.set(txs),
+        });
+
+        this.pollSub = interval(30_000)
+            .pipe(
+            startWith(0),
+            switchMap(() => this.txService.getTransactions())
+            )
+            .subscribe({ next: (txs) => this.transactions.set(txs) });
     }
 
     ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
     }
 
-    refresh(): void {
-    this.txService.getTransactions().subscribe({
-        next: (txs) => this.transactions.set(txs),
-    });
+    refreshList(): void {
+        this.txService.getTransactions().subscribe({
+            next: (txs) => this.transactions.set(txs),
+        });
     }
 
     openRbf(tx: Transaction): void {
@@ -63,7 +67,7 @@ export class TxListComponent implements OnInit, OnDestroy {
         next: () => {
         this.rbfLoading.set(false);
         this.cancelRbf();
-        this.refresh();
+        this.refreshList();
         },
         error: (err) => {
         this.rbfError.set(err.error?.error ?? 'RBF failed.');
@@ -72,19 +76,23 @@ export class TxListComponent implements OnInit, OnDestroy {
     });
     }
 
-    mempoolUrl(txid: string): string {
-    return `https://mempool.space/testnet4/tx/${txid}`;
+    mempoolTxUrl(txid: string): string {
+        return `https://mempool.space/testnet4/tx/${txid}`;
+    }
+
+    mempoolWalletUrl(address: string): string {
+        return `https://mempool.space/testnet4/address/${address}`;
     }
 
     getStatusColor(status: string): string {
         if (status == "pending") {
-            return "yellow"
+            return "rgb(252, 255, 89)"
         } else if (status == "confirmed") {
-            return "green"
+            return "rgb(0, 209, 14)"
         } else if (status == "replaced") {
-            return "gray"
+            return "rgb(150, 150, 150)"
         } else {
-            return "red"
+            return "rgb(255, 77, 77)"
         }
     }
 }

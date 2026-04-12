@@ -1,0 +1,32 @@
+header {
+    text-align: center;
+}
+
+h1 {
+    margin: 20px;
+    margin-bottom: 0px;
+    font-style: italic;
+}
+
+hr {
+    width: 90%;
+}
+
+.forms,
+.txlist {
+    margin: 20px;
+}
+
+.subtitle {
+    font-style: italic;
+    display: block;
+}
+
+.forms,
+.txlist {
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 0 3px 3px rgba(0, 0, 0, 0.15);
+}

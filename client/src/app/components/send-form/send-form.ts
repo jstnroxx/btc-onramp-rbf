@@ -1,4 +1,4 @@
-import { Component, inject, signal, output, OnInit } from '@angular/core';
+import { Component, inject, signal, output, OnInit, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TransactionService } from '../../services/transaction';
@@ -22,6 +22,17 @@ export class SendFormComponent implements OnInit {
   recommendedFee = signal<number | null>(null);
   loading = signal(false);
   error = signal('');
+
+  constructor() {
+    effect(() => {
+        if (!this.txService.isWalletConnected()) {
+        this.recipient.set('');
+        this.amountSat.set(null);
+        this.feeSatPerVb.set(null);
+        this.error.set('');
+        }
+    });
+    }
 
   ngOnInit(): void {
     this.txService.getRecommendedFee().subscribe({

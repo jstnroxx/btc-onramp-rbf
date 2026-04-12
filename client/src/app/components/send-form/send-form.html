@@ -1,48 +1,51 @@
 <div class="card" [class.disabled]="!txService.isWalletConnected()">
     <h2>Send transaction</h2>
+    <hr>
 
-    @if (!txService.isWalletConnected()) {
-    <p class="hint">Connect your wallet first.</p>
-    }
+    <div class="center">
+        @if (!txService.isWalletConnected()) {
+        <p class="hint">Connect your wallet first.</p>
+        }
 
-    <label>Recipient address </label>
-    <input
-    type="text"
-    [(ngModel)]="recipient"
-    placeholder="tb1q... or m..."
-    [disabled]="!txService.isWalletConnected()"
-    />
-    <br><br>
-    <label>Amount (satoshis) </label>
-    <input
-    type="number"
-    [(ngModel)]="amountSat"
-    placeholder="10000"
-    [disabled]="!txService.isWalletConnected()"
-    />
-    <br><br>
-    <label>
-    Fee (sat/vB)
-    @if (recommendedFee()) {
-        <span class="hint"> — recommended: {{ recommendedFee() }}</span>
-    }
-    </label>
-    <input
-    type="number"
-    [(ngModel)]="feeSatPerVb"
-    [placeholder]="recommendedFee()?.toString() ?? 'auto'"
-    [disabled]="!txService.isWalletConnected()"
-    />
-    <p class="hint">Lower the fee intentionally to test RBF with a stuck transaction.</p>
+        <label>Recipient address:&ensp;</label>
+        <input
+        type="text"
+        [(ngModel)]="recipient"
+        placeholder="tb1q... or m..."
+        [disabled]="!txService.isWalletConnected()"
+        />
+        <br><br>
+        <label>Amount (satoshis):&ensp;</label>
+        <input
+        type="number"
+        [(ngModel)]="amountSat"
+        placeholder="10000"
+        [disabled]="!txService.isWalletConnected()"
+        />
+        <br><br>
+        <label>
+        Fee (sat/vB):
+        @if (recommendedFee()) {
+            <span class="hint"> — recommended: {{ recommendedFee() }}&ensp;</span>
+        }
+        </label>
+        <input
+        type="number"
+        [(ngModel)]="feeSatPerVb"
+        [placeholder]="recommendedFee()?.toString() ?? '0'"
+        [disabled]="!txService.isWalletConnected()"
+        />
+        <p class="hint">Lower the fee intentionally to test RBF with a stuck transaction.</p>
 
-    @if (error()) {
-    <p class="error">{{ error() }}</p>
-    }
+        @if (error() && txService.isWalletConnected()) {
+        <p class="error">{{ error() }}</p>
+        }
 
-    <button
-    (click)="send()"
-    [disabled]="!txService.isWalletConnected() || loading() || !recipient() || !amountSat()"
-    >
-    {{ loading() ? 'Sending…' : 'Send' }}
-    </button>
+        <button
+        (click)="send()"
+        [disabled]="!txService.isWalletConnected() || loading() || !recipient() || !amountSat()"
+        >
+        {{ loading() ? 'Sending…' : 'Send' }}
+        </button>
+    </div>
 </div>
