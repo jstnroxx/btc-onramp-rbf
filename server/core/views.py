@@ -31,22 +31,12 @@ class RecommendedFeeView(APIView):
     
 class TransactionListView(APIView):
     def get(self, request):
-        transactions = Transaction.objects.all().order_by('-createdAt')
+        transactions = list(Transaction.objects.all().order_by('-createdAt'))
         
-        for tx in transactions:
-            if tx.status == Transaction.Status.PENDING:
-                info = bitcoin_service.getTxInfo(tx.txId)
-                
-                if info is None:
-                    if not tx.replacedBy:
-                        tx.status = Transaction.Status.REPLACED
-                        tx.save(update_fields = ['status'])
-                elif info["confirmed"]:
-                    tx.confirmations = 1
-                    tx.status = Transaction.Status.CONFIRMED
-                    tx.save(update_fields = ['confirmations', 'status'])
+        bitcoin_service.refreshConfirmations(transactions)
+        serializer = TransactionSerializer(transactions, many = True)
                     
-        return Response(TransactionSerializer(transactions, many = True).data)
+        return Response(serializer.data)
     
     def post(self, request):
         wifKey = _requireKey(request)

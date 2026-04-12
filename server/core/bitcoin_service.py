@@ -156,3 +156,28 @@ def bumpFee(wifKey : str, originalTxId : str, newFeeSatPerVB : int) -> dict:
         
     return sendTransaction(wifKey, originalTx.recipient, originalTx.amountSat, newFeeSatPerVB, forcedUtxos = forcedUtxos)
 
+def _getCurrentBlockHeight() -> int | None:
+    try:
+        response = requests.get(f"{MEMPOOL_API_URL}/blocks/tip/height", timeout = 10)
+        response.raise_for_status()
+        
+        return int(response.text.strip())
+    except:
+        return None
+    
+def refreshConfirmations(transactions) -> None:
+    currentHeight = _getCurrentBlockHeight()
+    
+    for tx in transactions:
+        info = getTxInfo(tx.txId)
+        
+        if info is None:
+            if not tx.replacedBy:
+                tx.status = "replaced"
+                tx.save(update_fields = ["status"])
+        elif info["confirmed"] and info["blockHeight"] and currentHeight:
+            tx.confirmations = currentHeight - info["blockHeight"] + 1
+            tx.status = "confirmed"
+            tx.save(update_fields = ["confirmations", "status"])
+        
+        
