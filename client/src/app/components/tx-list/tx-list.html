@@ -1,0 +1,82 @@
+<div class="card">
+    <h2>Transactions</h2>
+
+    @if (transactions().length === 0) {
+        <p class="hint">
+            No transactions yet.
+        </p>
+    }
+
+    @for (tx of transactions(); track tx.id) {
+        <div class="tx-item" [class]="'status-' + tx.status">
+
+            <span class="badge" [style.background-color]="getStatusColor(tx.status)" [class]="'badge-' + tx.status">{{ tx.status }}</span>
+
+            <div class="tx-row">
+                <span class="label">TXID: </span>
+
+                <a [style.text-decoration]="tx.replacedBy_id && 'line-through'" [href]="mempoolUrl(tx.txId)" target="_blank" class="txid">
+                    {{ tx.txId }}
+                </a>
+
+                @if (tx.replaces_txId) {
+                    <div class="rbf-chain">
+                        <span class="chain-label">&emsp;&#8627; replaced </span>
+                        <span class="txid">{{ tx.replaces_txId | slice:0:20 }}…</span>
+                    </div>
+                }
+            </div>
+
+            <div class="tx-row">
+                <span class="label">Recipient: </span>
+                <span class="txid">{{ tx.recipient }}</span>
+            </div>
+
+            <div class="tx-row">
+                <span class="label">Amount: </span>
+                <span>{{ tx.amountSat | number }} sat</span>
+            </div>
+
+            <div class="tx-row">
+                <span class="label">Fee: </span>
+                <span>{{ tx.feeSatPerVB }} sat/vB ({{ tx.sizeBytes }} bytes)</span>
+            </div>
+
+            <div class="tx-row">
+                <span class="label">Confirmations: </span>
+                <span>{{ tx.confirmations }}</span>
+            </div>
+
+            <div class="tx-row">
+                <span class="label">Sent: </span>
+                <span>{{ tx.createdAt | date:'medium' }}</span>
+            </div>
+
+            @if (tx.status === 'pending' && txService.isWalletConnected()) {
+                @if (rbfTxId() !== tx.id) {
+                    <button class="rbf-btn" (click)="openRbf(tx)">
+                        Increase fee (RBF)
+                    </button>
+                } @else {
+                    <div class="rbf-form">
+                        <label>New fee (sat/vB) — must be &gt; {{ tx.feeSatPerVB }}</label>
+                        <input type="number" [(ngModel)]="newFee" [min]="tx.feeSatPerVB + 1" />
+
+                        @if (rbfError()) {
+                            <p class="error">{{ rbfError() }}</p>
+                        }
+
+                        <div class="rbf-actions">
+                            <button (click)="submitRbf(tx)" [disabled]="rbfLoading() || !newFee()">
+                                {{ rbfLoading() ? 'Broadcasting…' : 'Confirm bump' }}
+                            </button>
+                            <button class="secondary" (click)="cancelRbf()">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>

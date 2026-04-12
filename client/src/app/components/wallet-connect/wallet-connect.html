@@ -1,0 +1,28 @@
+<div class="card">
+    @if (!txService.isWalletConnected()) {
+    <h2>Connect wallet</h2>
+    <p class="hint">Paste your Bitcoin testnet4 WIF key to get started.</p>
+
+    <input
+        type="password"
+        [(ngModel)]="wifInput"
+        placeholder="WIF key..."
+        (keyup.enter)="connect()"
+    />
+
+    @if (error()) {
+        <p class="error">{{ error() }}</p>
+    }
+
+    <button (click)="connect()" [disabled]="loading() || !wifInput()">
+        {{ loading() ? 'Connecting…' : 'Connect' }}
+    </button>
+
+    } @else {
+    <h2>Wallet connected</h2>
+    <p class="hint">Address</p>
+    <p class="address">{{ txService.wallet()!.address }}</p>
+    <p class="balance">{{ txService.wallet()!.balanceSat | number }} sat</p>
+    <button class="secondary" (click)="txService.disconnectWallet()">Disconnect</button>
+    }
+</div>

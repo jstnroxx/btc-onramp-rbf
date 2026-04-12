@@ -7,22 +7,37 @@ from bitcoinlib.services.services import Service
 MEMPOOL_API_URL = "https://mempool.space/testnet4/api"
 
 # Wallets
+def _getWitnessType(key : Key) -> tuple[str, str]:
+    btcService = Service(network = "testnet4")
+    
+    segwitAddress = key.address(encoding = "bech32")
+    legacyAddress = key.address(encoding = "base58")
+    
+    if btcService.getutxos(segwitAddress):
+        return segwitAddress, "segwit"
+    
+    if btcService.getutxos(legacyAddress):
+        return legacyAddress, "legacy"
+    
+    return segwitAddress, "segwit"
+
 def loadWallet(wifKey : str) -> Key:
     try:
-        return Key(wifKey, network = "testnet4")
+        key = Key(wifKey, network = "testnet4")
     except:
         raise ValueError("Invalid WIF key") 
     
-def getWalletInfo(wifKey : str) -> dict:
-    wallet = loadWallet(wifKey)
+    address, witnessType = _getWitnessType(key)
+    return key, address, witnessType
     
-    walletAddress = wallet.address()
+def getWalletInfo(wifKey : str) -> dict:
+    key, address, witnessType = loadWallet(wifKey)
     
     btcService = Service(network = "testnet4")
-    balanceSat = btcService.getbalance(walletAddress)
+    balanceSat = btcService.getbalance(address)
     
     return {
-        "address" : walletAddress,
+        "address" : address,
         "balanceSat" : balanceSat
     }
     
@@ -65,20 +80,20 @@ def getTxInfo(txid : str) -> dict | None:
     
 # Transactions
 def sendTransaction(wifKey : str, recipient : str, amountSat : int, feeSatPerVB : int) -> dict:
-    wallet = loadWallet(wifKey)
+    key, address, witnessType = loadWallet(wifKey)
     
     btcService = Service(network = "testnet4")
-    addressUtxos = btcService.getutxos(wallet.address())
+    addressUtxos = btcService.getutxos(address)
     
     if not addressUtxos:
         raise ValueError("No UTXOs found. Is the wallet funded?")
     
-    tx = Transaction(network = "testnet4", witness_type = "legacy")
+    tx = Transaction(network = "testnet4", witness_type = witnessType)
     
     totalInputSat = 0
     
     for utxo in addressUtxos:
-        tx.add_input(prev_txid = utxo["txid"], output_n = utxo["output_n"], keys = [wallet], sequence = 0xFFFFFFFD, witness_type = "legacy")    # "sequence = 0xFFFFFFFD" enables RBF
+        tx.add_input(prev_txid = utxo["txid"], output_n = utxo["output_n"], keys = [key], sequence = 0xFFFFFFFD, witness_type = witnessType)    # "sequence = 0xFFFFFFFD" enables RBF
         totalInputSat += utxo["value"]
         
         estimatedSize = tx.estimate_size()
@@ -96,9 +111,9 @@ def sendTransaction(wifKey : str, recipient : str, amountSat : int, feeSatPerVB 
     changeAmount = totalInputSat - amountSat - finalFee
     
     if changeAmount > 546:    # 546 satoshi is bitcoin dust limit, do not send such changes below
-        tx.add_output(changeAmount, address = wallet.address())
+        tx.add_output(changeAmount, address = address)
         
-    tx.sign(keys=[wallet])    
+    tx.sign()    
     
     rawTxHex = tx.raw_hex()
     

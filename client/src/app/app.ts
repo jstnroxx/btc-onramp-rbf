@@ -1,12 +1,13 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, viewChild } from '@angular/core';
+import { WalletConnectComponent } from './components/wallet-connect/wallet-connect';
+import { SendFormComponent } from './components/send-form/send-form';
+import { TxListComponent } from './components/tx-list/tx-list';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [WalletConnectComponent, SendFormComponent, TxListComponent],
 })
 export class App {
-  protected readonly title = signal('client');
+  txList = viewChild.required(TxListComponent);
 }
